@@ -32,7 +32,7 @@ wasm-bindgen-futures = "0.4.28"
 # like the DOM.
 [dependencies.web-sys]
 version = "0.3.55"
-features = ["console", "Window", "Document", "Element",  "HtmlCanvasElement", "CanvasRenderingContext2d", "HtmlImageElement"]
+features = ["console", "Window", "Document", "Element",  "HtmlCanvasElement", "CanvasRenderingContext2d", "HtmlImageElement", "Response"]
 
 # These crates are used for running unit tests.
 [dev-dependencies]

@@ -52,11 +52,19 @@ pub fn main_js() -> Result<(), JsValue> {
 
         success_rx.await;
         context.draw_image_with_html_image_element(&image, 0.0, 0.0);
+        let json = fetch_json("rgb.json").await.unwrap();
 
         sierpinski(&context, [(300.0, 0.0), (0.0, 600.0), (600.0, 600.0)], 5, (10, 200, 20));
     });
 
     Ok(())
+}
+
+async fn fetch_json(json_path: &str) -> Result<JsValue, JsValue> {
+    let window = web_sys::window().unwrap();
+    let resp_value = wasm_bindgen_futures::JsFuture::from(window.fetch_with_str(json_path)).await?;
+    let resp: web_sys::Response = resp_value.dyn_into()?;
+    wasm_bindgen_futures::JsFuture::from(resp.json()?).await
 }
 
 fn sierpinski(
