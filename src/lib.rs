@@ -8,7 +8,7 @@ use wasm_bindgen::JsCast;
 use web_sys::console;
 
 #[derive(Deserialize)]
-struct sheet {
+struct Sheet {
     frames: HashMap<String, Cell>,
 }
 #[derive(Deserialize)]
@@ -47,6 +47,8 @@ pub fn main_js() -> Result<(), JsValue> {
         .unwrap();
 
     wasm_bindgen_futures::spawn_local(async move{
+        sierpinski(&context, [(300.0, 0.0), (0.0, 600.0), (600.0, 600.0)], 5, (10, 200, 20));
+
         let (success_tx, success_rx) = futures::channel::oneshot::channel::<Result<(), JsValue>>();
         let success_tx = Rc::new(Mutex::new(Some(success_tx)));
         let error_tx = Rc::clone(&success_tx);
@@ -70,9 +72,46 @@ pub fn main_js() -> Result<(), JsValue> {
 
         success_rx.await;
         context.draw_image_with_html_image_element(&image, 0.0, 0.0);
-        let json = fetch_json("rhb.json").await.unwrap();
 
-        sierpinski(&context, [(300.0, 0.0), (0.0, 600.0), (600.0, 600.0)], 5, (10, 200, 20));
+
+        let json = fetch_json("rhb.json").await.expect("could not fetch rhb.json");
+        let sheet: Sheet = json.into_serde().expect("could not convert rhb.json into a Sheet structure");
+
+        let (success_tx, success_rx) = futures::channel::oneshot::channel::<Result<(), JsValue>>();
+        let success_tx = Rc::new(Mutex::new(Some(success_tx)));
+        let error_tx = Rc::clone(&success_tx);
+        let callback = Closure::once(move || {
+            web_sys::console::log_1(&JsValue::from_str("loaded"));
+            if let Some(success_tx) = success_tx.lock().ok().and_then(|mut opt| opt.take()) {
+                success_tx.send(Ok(()));
+            }
+        });
+        let error_callback = Closure::once(move |err| {
+            web_sys::console::log_1(&JsValue::from_str("error!"));
+            if let Some(error_tx) = error_tx.lock().ok().and_then(|mut opt| opt.take()) {
+                error_tx.send(Err(err));
+            }
+        });
+
+        let image = web_sys::HtmlImageElement::new().unwrap();
+        image.set_onload(Some(callback.as_ref().unchecked_ref()));
+        image.set_onerror(Some(error_callback.as_ref().unchecked_ref()));
+        image.set_src("rhb.png");
+
+        success_rx.await;
+        let sprite = sheet.frames.get("Run (1).png").expect("cell not found");
+        context.draw_image_with_html_image_element_and_sw_and_sh_and_dx_and_dy_and_dw_and_dh(
+            &image,
+            sprite.frame.x.into(),
+            sprite.frame.y.into(),
+            sprite.frame.w.into(),
+            sprite.frame.h.into(),
+            300.0,
+            300.0,
+            sprite.frame.w.into(),
+            sprite.frame.h.into(),
+            );
+
     });
 
     Ok(())
