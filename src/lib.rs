@@ -1,9 +1,27 @@
 use rand::prelude::*;
+use serde::Deserialize;
+use std::collections::HashMap;
 use std::rc::Rc;
 use std::sync::Mutex;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::console;
+
+#[derive(Deserialize)]
+struct sheet {
+    frames: HashMap<String, Cell>,
+}
+#[derive(Deserialize)]
+struct Cell {
+    frame: Rect,
+}
+#[derive(Deserialize)]
+struct Rect {
+    x: u16,
+    y: u16,
+    w: u16,
+    h: u16,
+}
 
 // This is like the `main` function, except for JavaScript.
 #[wasm_bindgen(start)]
@@ -52,7 +70,7 @@ pub fn main_js() -> Result<(), JsValue> {
 
         success_rx.await;
         context.draw_image_with_html_image_element(&image, 0.0, 0.0);
-        let json = fetch_json("rgb.json").await.unwrap();
+        let json = fetch_json("rhb.json").await.unwrap();
 
         sierpinski(&context, [(300.0, 0.0), (0.0, 600.0), (600.0, 600.0)], 5, (10, 200, 20));
     });

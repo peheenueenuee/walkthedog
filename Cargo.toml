@@ -25,6 +25,7 @@ console_error_panic_hook = "0.1.7"
 getrandom = { version = "0.2", features = ["js"] }
 futures = "0.3.18"
 rand = "0.8.4"
+serde = { version = "1.0.131", features = ["derive"] }
 wasm-bindgen = "0.2.78"
 wasm-bindgen-futures = "0.4.28"
 
