@@ -1,4 +1,3 @@
-use rand::prelude::*;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -47,31 +46,6 @@ pub fn main_js() -> Result<(), JsValue> {
         .unwrap();
 
     wasm_bindgen_futures::spawn_local(async move{
-        let (success_tx, success_rx) = futures::channel::oneshot::channel::<Result<(), JsValue>>();
-        let success_tx = Rc::new(Mutex::new(Some(success_tx)));
-        let error_tx = Rc::clone(&success_tx);
-        let callback = Closure::once(move || {
-            web_sys::console::log_1(&JsValue::from_str("loaded"));
-            if let Some(success_tx) = success_tx.lock().ok().and_then(|mut opt| opt.take()) {
-                success_tx.send(Ok(()));
-            }
-        });
-        let error_callback = Closure::once(move |err| {
-            web_sys::console::log_1(&JsValue::from_str("error!"));
-            if let Some(error_tx) = error_tx.lock().ok().and_then(|mut opt| opt.take()) {
-                error_tx.send(Err(err));
-            }
-        });
-
-        let image = web_sys::HtmlImageElement::new().unwrap();
-        image.set_onload(Some(callback.as_ref().unchecked_ref()));
-        image.set_onerror(Some(error_callback.as_ref().unchecked_ref()));
-        image.set_src("Idle (1).png");
-
-        success_rx.await;
-        context.draw_image_with_html_image_element(&image, 0.0, 0.0);
-
-
         let json = fetch_json("rhb.json").await.expect("could not fetch rhb.json");
         let sheet: Sheet = json.into_serde().expect("could not convert rhb.json into a Sheet structure");
 
