@@ -1,3 +1,6 @@
+#[macro_use]
+mod browser;
+
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -28,7 +31,7 @@ pub fn main_js() -> Result<(), JsValue> {
     console_error_panic_hook::set_once();
 
     // Your code goes here!
-    console::log_1(&JsValue::from_str("Hello world!"));
+    log!("Hello world! in browser");
 
     let window = web_sys::window().unwrap();
     let document = window.document().unwrap();
