@@ -7,7 +7,6 @@ use std::rc::Rc;
 use std::sync::Mutex;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
-use web_sys::console;
 
 #[derive(Deserialize)]
 struct Sheet {
@@ -33,20 +32,7 @@ pub fn main_js() -> Result<(), JsValue> {
     // Your code goes here!
     log!("Hello world! in browser");
 
-    let window = web_sys::window().unwrap();
-    let document = window.document().unwrap();
-    let canvas = document
-        .get_element_by_id("canvas")
-        .unwrap()
-        .dyn_into::<web_sys::HtmlCanvasElement>()
-        .unwrap();
-
-    let context = canvas
-        .get_context("2d")
-        .unwrap()
-        .unwrap()
-        .dyn_into::<web_sys::CanvasRenderingContext2d>()
-        .unwrap();
+    let context = browser::context().unwrap();
 
     wasm_bindgen_futures::spawn_local(async move{
         let json = fetch_json("rhb.json").await.expect("could not fetch rhb.json");
@@ -92,7 +78,11 @@ pub fn main_js() -> Result<(), JsValue> {
                 sprite.frame.h.into(),
                 );
         }) as Box<dyn FnMut()>);
-        window.set_interval_with_callback_and_timeout_and_arguments_0(interval_callback.as_ref().unchecked_ref(), 50);
+        browser::window()
+            .unwrap()
+            .set_interval_with_callback_and_timeout_and_arguments_0(
+                interval_callback.as_ref().unchecked_ref(),
+                50);
         interval_callback.forget();
     });
 
