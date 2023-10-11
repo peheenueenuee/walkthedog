@@ -1,6 +1,8 @@
 use anyhow::{anyhow, Result};
-use wasm_bindgen::JsCast;
-use web_sys::{Document, HtmlCanvasElement, Window, CanvasRenderingContext2d};
+use futures::Future;
+use wasm_bindgen::{JsCast, JsValue};
+use wasm_bindgen_futures::JsFuture;
+use web_sys::{Document, HtmlCanvasElement, Window, CanvasRenderingContext2d, Response};
 
 macro_rules! log {
     ( $( $t:tt )* ) => {
@@ -24,7 +26,7 @@ pub fn canvas() -> Result<HtmlCanvasElement> {
         .map_err(|element| anyhow!("Error converting {:#?} to HtmlCanvasElement", element))
 }
 
-pub fn context() -> Result<CanvasRenderingContext2d>  {
+pub fn context() -> Result<CanvasRenderingContext2d> {
     canvas()?
         .get_context("2d")
         .map_err(|js_value| anyhow!("Error getting 2d context {:#?}", js_value))?
@@ -33,4 +35,28 @@ pub fn context() -> Result<CanvasRenderingContext2d>  {
         .map_err(
             |element| anyhow!("Error converting {:#?} to HtmlCanvasElement", element)
             )
+}
+
+pub fn spawn_local<F>(future: F)
+    where F:Future<Output = ()> + 'static,
+{
+    wasm_bindgen_futures::spawn_local(future);
+}
+
+pub async fn fetch_with_str(resource: &str) -> Result<JsValue> {
+    JsFuture::from(window()?.fetch_with_str(resource))
+        .await
+        .map_err(|err| anyhow!("Error fetching {:#?}", err))
+}
+
+pub async fn fetch_json(json_path: &str) -> Result<JsValue> {
+    let resp_v = fetch_with_str(json_path).await?;
+    let resp: Response = resp_v
+        .dyn_into()
+        .map_err(|element| anyhow!("Error converting {:#?} to Response", element))?;
+    JsFuture::from(
+        resp.json()
+        .map_err(|err| anyhow!("Could not get JSON from response {:#?}", err))?,
+        ).await
+        .map_err(|err| anyhow!("Error fetching JSON {:#?}", err))
 }
