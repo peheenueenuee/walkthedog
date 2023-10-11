@@ -29,14 +29,15 @@ struct Rect {
 pub fn main_js() -> Result<(), JsValue> {
     console_error_panic_hook::set_once();
 
-    // Your code goes here!
     log!("Hello world! in browser");
-
-    let context = browser::context().unwrap();
+    let context = browser::context().expect("Could not get browser context");
 
     browser::spawn_local(async move{
-        let json = browser::fetch_json("rhb.json").await.expect("could not fetch rhb.json");
-        let sheet: Sheet = json.into_serde().expect("could not convert rhb.json into a Sheet structure");
+        let sheet: Sheet = browser::fetch_json("rhb.json")
+            .await
+            .expect("could not fetch rhb.json")
+            .into_serde()
+            .expect("could not convert rhb.json into a Sheet structure");
 
         let (success_tx, success_rx) = futures::channel::oneshot::channel::<Result<(), JsValue>>();
         let success_tx = Rc::new(Mutex::new(Some(success_tx)));
