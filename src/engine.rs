@@ -1,11 +1,12 @@
 use crate::browser;
 use crate::Closure;
 use anyhow::{anyhow, Result};
+use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::Mutex;
 use futures::channel::oneshot::channel;
 use wasm_bindgen::{JsCast, JsValue};
-use web_sys::{HtmlImageElement};
+use web_sys::{HtmlImageElement, CanvasRenderingContext2d};
 
 pub async fn load_image(source: &str) -> Result<HtmlImageElement> {
     let image = browser::new_image()?;
@@ -35,4 +36,31 @@ pub async fn load_image(source: &str) -> Result<HtmlImageElement> {
     image.set_src(source);
     complete_rx.await??;
     Ok(image)
+}
+
+pub trait Game {
+    fn update(&mut self);
+    fn draw(&self, context: &CanvasRenderingContext2d);
+}
+
+pub struct GameLoop;
+type SharedLoopClosure = Rc<RefCell<Option<browser::LoopClosure>>>;
+
+impl GameLoop {
+    pub async fn start(mut game: impl Game + 'static) -> Result<()> {
+        let f: SharedLoopClosure = Rc::new(RefCell::new(None));
+        let g = f.clone();
+
+        *g.borrow_mut() = Some(browser::create_raf_closure(move |perf: f64| {
+            game.update();
+            game.draw(&browser::context().expect("Context should exist"));
+            browser::request_animation_frame(f.borrow().as_ref().unwrap());
+        }));
+        browser::request_animation_frame(
+            g.borrow()
+                .as_ref()
+                .ok_or_else(|| anyhow!("GameLoop: Loop is None"))?,
+        )?;
+        Ok(())
+    }
 }
