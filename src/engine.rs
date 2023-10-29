@@ -1,10 +1,10 @@
 use crate::browser;
+use crate::Closure;
 use anyhow::{anyhow, Result};
 use std::rc::Rc;
 use std::sync::Mutex;
 use futures::channel::oneshot::channel;
 use wasm_bindgen::{JsCast, JsValue};
-use wasm_bindgen::closure::Closure;
 use web_sys::{HtmlImageElement};
 
 pub async fn load_image(source: &str) -> Result<HtmlImageElement> {

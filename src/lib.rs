@@ -38,7 +38,9 @@ pub fn main_js() -> Result<(), JsValue> {
             .into_serde()
             .expect("could not convert rhb.json into a Sheet structure");
 
-        let image = engine::load_image("rhb.png").await.expect("Could not create browser image ");
+        let image = engine::load_image("rhb.png")
+            .await
+            .expect("Could not create browser image ");
 
         let mut frame = -1;
         let interval_callback = Closure::wrap(Box::new(move || {
