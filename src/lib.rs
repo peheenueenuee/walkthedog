@@ -4,6 +4,8 @@ mod engine;
 
 use serde::Deserialize;
 use std::collections::HashMap;
+use std::rc::Rc;
+use std::cell::RefCell;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
@@ -27,6 +29,14 @@ struct Rect {
 #[wasm_bindgen(start)]
 pub fn main_js() -> Result<(), JsValue> {
     console_error_panic_hook::set_once();
+
+    let f: Rc<RefCell<Option<browser::LoopClosure>>> = Rc::new(RefCell::new(None));
+    let g = f.clone();
+    let animate = Some(browser::create_raf_closure(move |perf: f64| {
+        browser::request_animation_frame(f.borrow().as_ref().unwrap());
+    }));
+    *g.borrow_mut() = animate;
+    browser::request_animation_frame(g.borrow().as_ref().unwrap());
 
     log!("Hello world! in browser");
     let context = browser::context().expect("Could not get browser context");
