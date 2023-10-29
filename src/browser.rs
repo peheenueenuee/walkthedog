@@ -1,7 +1,7 @@
 use anyhow::{anyhow, Result};
 use futures::Future;
 use wasm_bindgen::{JsCast, JsValue};
-use wasm_bindgen::closure::WasmClosureFnOnce;
+use wasm_bindgen::closure::{WasmClosureFnOnce, WasmClosure};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{Document, HtmlCanvasElement, HtmlImageElement, Window, CanvasRenderingContext2d, Response};
@@ -73,3 +73,20 @@ where F: 'static + WasmClosureFnOnce<A, R>,
 {
     Closure::once(fn_once)
 }
+
+pub fn closure_wrap<T: WasmClosure + ?Sized>(data: Box<T>) -> Closure<T>{
+    Closure::wrap(data)
+}
+
+pub type LoopClosure = Closure<dyn FnMut(f64)>;
+
+pub fn request_animation_frame(callback: &LoopClosure) -> Result<i32> {
+    window()?
+        .request_animation_frame(callback.as_ref().unchecked_ref())
+        .map_err(|err| anyhow!("Cannot request animation frame {:#?}", err))
+}
+
+pub fn create_raf_closure(f: impl FnMut(f64) + 'static) -> LoopClosure {
+    closure_wrap(Box::new(f))
+}
+
